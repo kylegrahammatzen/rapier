@@ -1,3 +1,10 @@
+## Unreleased
+
+### Fixed
+
+- Rolling balls no longer sink into what they roll on. A ball centered on its body's center of mass
+  now tracks its contact separation by translation, since a body-fixed anchor rotates away with the spin.
+
 ## v0.36.1 (4 October 2026)
 
 ### Added
