@@ -45,3 +45,19 @@ pub(crate) fn compute_tangent_contact_directions<N: ScalarType>(
 
     [tangent1, bitangent1]
 }
+
+/// The linear part of the tangent effective-mass coupling `t1·(im ⊙ t2)`, with `im` the
+/// per-axis inverse mass of both bodies.
+///
+/// The tangents are orthonormal, so this only depends on how `im` differs between axes: it is
+/// exactly zero unless a translation is locked, and with one locked (e.g. a body kept in a
+/// plane) it keeps the 2×2 friction matrix from losing the coupling between the tangents.
+#[inline]
+#[cfg(feature = "dim3")]
+pub(crate) fn tangent_linear_coupling(
+    im: <crate::math::SimdReal as ScalarType>::Vector,
+    tangents: &[<crate::math::SimdReal as ScalarType>::Vector; DIM - 1],
+) -> crate::math::SimdReal {
+    let [t1, t2] = tangents;
+    (im.y - im.x) * t1.y * t2.y + (im.z - im.x) * t1.z * t2.z
+}

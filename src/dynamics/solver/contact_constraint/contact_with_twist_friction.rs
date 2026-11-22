@@ -376,7 +376,9 @@ impl ContactWithTwistFrictionBuilder<SimdReal> {
         out_constraint.tangent_part.ii_torque_dir2 = ii_torque_dirs2;
 
         out_constraint.tangent_part.r[2] = SimdReal::splat(2.0)
-            * (ii_torque_dirs1[0].gdot(torque_dirs1[1]) + ii_torque_dirs2[0].gdot(torque_dirs2[1]));
+            * (ii_torque_dirs1[0].gdot(torque_dirs1[1])
+                + ii_torque_dirs2[0].gdot(torque_dirs2[1])
+                + super::tangent_linear_coupling(poses1.im + poses2.im, &tangents1));
 
         #[cfg(feature = "block-solver")]
         {

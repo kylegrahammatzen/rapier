@@ -296,7 +296,8 @@ impl ContactWithCoulombFrictionBuilder {
                     * (out_constraint.tangent_part[k].ii_torque_dir1[0]
                         .gdot(out_constraint.tangent_part[k].torque_dir1[1])
                         + out_constraint.tangent_part[k].ii_torque_dir2[0]
-                            .gdot(out_constraint.tangent_part[k].torque_dir2[1]));
+                            .gdot(out_constraint.tangent_part[k].torque_dir2[1])
+                        + super::tangent_linear_coupling(poses1.im + poses2.im, &tangents1));
                 out_constraint.tangent_part[k].r[2] = r2.select(active, SimdReal::zero());
             }
 
