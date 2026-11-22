@@ -156,6 +156,8 @@ jobs:
         run: cargo test -p rapier2d --release --features serde-serialize --test snapshot_roundtrip
       - name: Test single-worker deferred BVH
         run: cargo test -p rapier3d --release --features parallel --test single_worker_deferred_bvh
+      - name: Test deferred BVH with a busy worker
+        run: cargo test -p rapier3d --release --features parallel --test busy_worker_deferred_bvh
       # `unsync-callbacks` drops the `Sync` bound off the hooks/event traits; the test's
       # callbacks hold a `Cell`, so it only compiles while that holds.
       - name: Test unsync callbacks
