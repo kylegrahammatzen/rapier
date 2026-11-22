@@ -435,6 +435,12 @@ pub(super) fn process_pair(
             rigid.workspace = None;
         }
 
+        // Most pairs hold a single manifold, but a Vec's first push makes room for four
+        // (about 480 bytes wasted per pair): make room for exactly one instead.
+        if rigid.manifolds.capacity() == 0 {
+            rigid.manifolds.reserve_exact(1);
+        }
+
         // Rigid-vs-rigid and soft-vs-rigid collisions.
         let _ = query_dispatcher.contact_manifolds(
             &pos12,

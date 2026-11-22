@@ -377,6 +377,11 @@ impl PhysicsPipeline {
         // Solve the single awake island. The staged solver is the only solver: a parallel
         // build fans the colored constraints across `num_threads` workers; otherwise
         // `num_threads` = 1 and it runs inline, skipping all cross-worker coordination.
+        if islands.num_active_bodies() == 0 {
+            // Nothing to solve. The contact constraint buffers are rebuilt every step, so a
+            // world that has fallen asleep doesn't keep the ones its last big island needed.
+            self.staged_solver.release_contact_buffers();
+        }
         if let Some(island_id) = islands.awake_island {
             #[cfg(feature = "parallel")]
             let num_threads = rayon::current_num_threads();

@@ -35,6 +35,12 @@ mod velocity_solver;
 pub unsafe fn reset_buffer_reusing<T>(buffer: &mut Vec<T>, len: usize) {
     if len <= buffer.len() {
         buffer.truncate(len);
+        // A buffer that grew for a much bigger island (everything awake at once, say) gives
+        // most of it back once it's more than four times too big, keeping room to double.
+        let spare = buffer.capacity() - len;
+        if buffer.capacity() > 4 * len && spare * core::mem::size_of::<T>() > (1 << 20) {
+            buffer.shrink_to(2 * len);
+        }
     } else {
         let old_len = buffer.len();
         buffer.reserve(len - old_len);

@@ -309,6 +309,23 @@ pub(crate) struct StagedIslandSolver {
 }
 
 impl StagedIslandSolver {
+    /// Frees the contact constraint buffers. They are rebuilt from the manifolds every step,
+    /// so nothing is lost: this is for when no island is awake.
+    pub fn release_contact_buffers(&mut self) {
+        let set = &self.contact_constraints;
+        let held = set.simd_velocity_coulomb_constraints.capacity()
+            + set.simd_velocity_coulomb_constraints_builder.capacity()
+            + set.generic_velocity_constraints.capacity()
+            + set.generic_velocity_constraints_builder.capacity();
+        #[cfg(feature = "dim3")]
+        let held = held
+            + set.simd_velocity_twist_constraints.capacity()
+            + set.simd_velocity_twist_constraints_builder.capacity();
+        if held > 0 {
+            self.contact_constraints = ContactConstraintsSet::new();
+        }
+    }
+
     pub fn new() -> Self {
         Self {
             contact_constraints: ContactConstraintsSet::new(),
