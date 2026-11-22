@@ -738,3 +738,56 @@ fn contact_force_events_follow_runtime_active_events_flips() {
     }
     assert_eq!(events.0.load(Ordering::Relaxed), after_enable);
 }
+
+/// A stack that fell asleep used to keep the solver's contact constraint buffers sized for its
+/// last awake step, and every contact pair held room for four manifolds when it had one.
+#[test]
+fn sleeping_world_frees_solver_buffers() {
+    use crate::pipeline::PhysicsWorld;
+
+    let mut world = PhysicsWorld::new();
+    #[cfg(feature = "dim2")]
+    let (ground, cube) = (
+        ColliderBuilder::cuboid(20.0, 0.5),
+        ColliderBuilder::cuboid(0.5, 0.5),
+    );
+    #[cfg(feature = "dim3")]
+    let (ground, cube) = (
+        ColliderBuilder::cuboid(20.0, 0.5, 20.0),
+        ColliderBuilder::cuboid(0.5, 0.5, 0.5),
+    );
+    let _ = world.insert(RigidBodyBuilder::fixed(), ground);
+    for i in 0..8 {
+        let mut pos = Vector::ZERO;
+        pos.y = 1.0 + i as crate::math::Real;
+        let _ = world.insert(RigidBodyBuilder::dynamic().translation(pos), cube.clone());
+    }
+
+    world.step();
+    let mut steps = 1;
+    while world.active_bodies().next().is_some() {
+        world.step();
+        steps += 1;
+        assert!(steps < 2000, "the stack never fell asleep");
+    }
+    world.step();
+    let set = &world.physics_pipeline.staged_solver.contact_constraints;
+    let held = set.simd_velocity_coulomb_constraints.capacity()
+        + set.simd_velocity_coulomb_constraints_builder.capacity()
+        + set.generic_velocity_constraints.capacity()
+        + set.generic_velocity_constraints_builder.capacity();
+    #[cfg(feature = "dim3")]
+    let held = held
+        + set.simd_velocity_twist_constraints.capacity()
+        + set.simd_velocity_twist_constraints_builder.capacity();
+    assert_eq!(held, 0, "the asleep world still holds contact constraints");
+
+    let mut pairs = 0;
+    for pair in world.contact_pairs().filter(|p| p.has_any_active_contact()) {
+        let manifolds = &pair.rigid().unwrap().manifolds;
+        assert_eq!(manifolds.len(), 1);
+        assert_eq!(manifolds.capacity(), 1);
+        pairs += 1;
+    }
+    assert_eq!(pairs, 8);
+}
